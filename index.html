@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Beer Index</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; text-align: center; }
+        .container { display: flex; max-width: 1400px; margin: 0 auto; }
+        #left-sidebar { width: 250px; padding-right: 20px; }
+        #right-sidebar { width: 300px; padding-left: 20px; }
+        #left-sidebar h2, #right-sidebar h2 { color: #333; font-size: 18px; margin-top: 20px; }
+        #left-sidebar ul, #right-sidebar ul { list-style: none; padding: 0; }
+        #left-sidebar li { margin: 10px 0; font-size: 16px; }
+        #left-sidebar a { color: #007bff; text-decoration: none; cursor: pointer; }
+        #left-sidebar a:hover { text-decoration: underline; }
+        #right-sidebar ul { list-style: decimal; padding-left: 20px; }
+        #right-sidebar li { margin: 8px 0; font-size: 14px; }
+        #right-sidebar a { color: #007bff; text-decoration: none; }
+        #right-sidebar a:hover { text-decoration: underline; }
+        #map { height: 600px; flex-grow: 1; }
+        p { max-width: 800px; margin: 10px auto; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Global Beer Index</h1>
+    <div class="container">
+        <div id="left-sidebar">
+            <h2>Top 10 Countries</h2>
+            <ul id="top-countries"></ul>
+            <h2>Top 10 Beers by Popularity</h2>
+            <ul id="top-beers">
+                <li>Bud Light (USA)</li>
+                <li>Snow Beer (China)</li>
+                <li>Budweiser (USA)</li>
+                <li>Heineken (Netherlands)</li>
+                <li>Corona (Mexico)</li>
+                <li>Coors Light (USA)</li>
+                <li>Miller Lite (USA)</li>
+                <li>Tsingtao (China)</li>
+                <li>Asahi Super Dry (Japan)</li>
+                <li>Pilsner Urquell (Czech Republic)</li>
+            </ul>
+        </div>
+        <div id="map"></div>
+        <div id="right-sidebar">
+            <h2>Top 10 Bars in <span id="country-name">Select a country</span></h2>
+            <ul id="bars"></ul>
+        </div>
+    </div>
+    <p>Discover where to find the best and most affordable beer around the world! Our index is based on 70% price affordability and 30% variety of beers.</p>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="beerData.js"></script>
+    <script>
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const topCountries = Object.entries(beerData)
+            .sort((a, b) => b[1].rating - a[1].rating)
+            .slice(0, 10);
+        const topList = document.getElementById("top-countries");
+        topCountries.forEach(([country, data]) => {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.textContent = `${country}: ${data.rating}`;
+            a.href = "#";
+            a.onclick = (e) => {
+                e.preventDefault();
+                showBars(country, data.bars);
+            };
+            li.appendChild(a);
+            topList.appendChild(li);
+        });
+
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(response => response.json())
+            .then(geojson => {
+                L.geoJSON(geojson, {
+                    style: function(feature) {
+                        const country = feature.properties.name;
+                        const data = beerData[country];
+                        return {
+                            fillColor: data ? getColor(data.rating) : '#cccccc',
+                            weight: 1,
+                            opacity: 1,
+                            color: 'white',
+                            fillOpacity: 0.7
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const country = feature.properties.name;
+                        const data = beerData[country];
+                        if (data) {
+                            layer.bindPopup(`
+                                <b>${country}</b><br>
+                                Rating: ${data.rating}<br>
+                                Sorts: ${data.sorts}<br>
+                                Price: $${data.price}<br>
+                                Most Popular: ${data.popular}<br>
+                                Best Local: ${data.best}
+                            `);
+                            layer.on('click', () => showBars(country, data.bars));
+                        }
+                    }
+                }).addTo(map);
+            });
+
+        function getColor(rating) {
+            return rating > 50 ? '#00ff00' :
+                   rating > 30 ? '#ffff00' :
+                   '#ff0000';
+        }
+
+        function showBars(country, bars) {
+            const countryName = document.getElementById("country-name");
+            const barUl = document.getElementById("bars");
+
+            countryName.textContent = country;
+            barUl.innerHTML = "";
+            if (bars && bars.length > 0) {
+                bars.forEach(bar => {
+                    const li = document.createElement("li");
+                    const a = document.createElement("a");
+                    a.textContent = bar;
+                    a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar)}`;
+                    a.target = "_blank";
+                    li.appendChild(a);
+                    barUl.appendChild(li);
+                });
+            } else {
+                barUl.innerHTML = "<li>No bars listed yet!</li>";
+            }
+        }
+    </script>
+</body>
+</html>
