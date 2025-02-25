@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Beer Index</title>
+    <title>Beendex</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -230,7 +230,7 @@
 <body>
     <header>
         <img src="https://via.placeholder.com/50?text=🍺" alt="Logo" class="logo">
-        <h1>Global Beer Index</h1>
+        <h1>Beendex</h1>
     </header>
     <div class="container">
         <div id="left-sidebar">
@@ -494,7 +494,7 @@
         document.getElementById("share").addEventListener("click", () => {
             const url = `${window.location.origin}?country=${encodeURIComponent(currentCountry?.country || "")}`;
             if (navigator.share) {
-                navigator.share({ url, title: "Global Beer Index" });
+                navigator.share({ url, title: "Beendex" });
             } else {
                 navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
             }
