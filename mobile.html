@@ -258,4 +258,97 @@
             countryName.textContent = country;
             detailsDiv.innerHTML = `
                 <p><i class="fas fa-star"></i><strong>${isRu ? "Рейтинг" : "Rating"}:</strong> ${data.rating.toFixed(2)}</p>
-                <p><i class="fas fa-beer"></i><strong>${isRu ? "Крафтовые сорта"
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Крафтовые сорта" : "Craft Sorts"}:</strong> ${data.craftSorts}</p>
+                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Цена" : "Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-globe"></i><strong>${isRu ? "Туристический рейтинг" : "Tourism Score"}:</strong> ${data.tourismScore}</p>
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Самое популярное" : "Most Popular"}:</strong> ${isRu ? data.popularRu : data.popular}</p>
+                <p><i class="fas fa-trophy"></i><strong>${isRu ? "Лучшее местное" : "Best Local"}:</strong> ${isRu ? data.bestRu : data.best}</p>
+                <p><i class="fas fa-book"></i><strong>${isRu ? "Культура" : "Culture"}:</strong> ${isRu ? data.descriptionRu : data.description}</p>
+                <p><i class="fas fa-utensils"></i><strong>${isRu ? "Еда к пиву" : "Food Pairing"}:</strong> ${isRu ? data.foodPairingRu : data.foodPairing}</p>
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Топ-5 брендов" : "Top 5 Brands"}:</strong></p>
+                <ul>${(isRu ? data.topBrandsRu : data.topBrands).map(brand => `<li>${brand}</li>`).join('')}</ul>
+            `;
+            renderBars(data.bars);
+        }
+
+        function renderBars(bars) {
+            const barUl = document.getElementById("bars");
+            barUl.innerHTML = "";
+            bars.slice(0, 10).forEach(bar => {
+                const li = document.createElement("li");
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = bar.name;
+                nameSpan.className = "bar-name";
+                const a = document.createElement("a");
+                a.textContent = bar.name;
+                a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.name)}`;
+                a.target = "_blank";
+                li.appendChild(a);
+                const ratingSpan = document.createElement("span");
+                ratingSpan.className = "rating";
+                const stars = getStars(bar.rating);
+                ratingSpan.innerHTML = `${stars} ${bar.rating || "N/A"}`;
+                li.appendChild(ratingSpan);
+                barUl.appendChild(li);
+            });
+        }
+
+        function getStars(rating) {
+            if (!rating) return "";
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5 ? "☆" : "";
+            const emptyStars = 5 - Math.ceil(rating);
+            return "★".repeat(fullStars) + halfStar + "☆".repeat(emptyStars);
+        }
+
+        function changeBackground(country) {
+            const landmarks = {
+                "Vietnam": "https://images.unsplash.com/photo-1545096922-6c8736f9a75e?q=80&w=1600&auto=format&fit=crop",
+                "Russia": "https://images.unsplash.com/photo-1547448526-5e9b15f2e2df?q=80&w=1600&auto=format&fit=crop",
+                "Czech Republic": "https://images.unsplash.com/photo-1565284055438-3a6fb81c5a50?q=80&w=1600&auto=format&fit=crop",
+                "Germany": "https://images.unsplash.com/photo-1538331642459-627f3d4dc4cf?q=80&w=1600&auto=format&fit=crop",
+                "Australia": "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=1600&auto=format&fit=crop",
+                "Brazil": "https://images.unsplash.com/photo-1504276048855-f3d3f2e36d2e?q=80&w=1600&auto=format&fit=crop",
+                "Japan": "https://images.unsplash.com/photo-1493976040374-85c8e12f2c0e?q=80&w=1600&auto=format&fit=crop",
+                "Mexico": "https://images.unsplash.com/photo-1504215686142-6026e0484910?q=80&w=1600&auto=format&fit=crop",
+                "South Africa": "https://images.unsplash.com/photo-1547471080-7cc2cfc260e0?q=80&w=1600&auto=format&fit=crop",
+                "United States": "https://images.unsplash.com/photo-1501594907352-967beb6f20e2?q=80&w=1600&auto=format&fit=crop"
+            };
+            const imageUrl = landmarks[country] || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1600&auto=format&fit=crop";
+            document.body.style.backgroundImage = `url(${imageUrl})`;
+        }
+
+        document.getElementById("close-modal").addEventListener("click", () => {
+            modal.style.display = "none";
+            if (selectedLayer) {
+                selectedLayer.setStyle({ weight: 1, color: '#666', opacity: 1 });
+                selectedLayer = null;
+            }
+            document.body.style.backgroundImage = "none";
+            map.setView([20, 0], 2);
+        });
+
+        document.getElementById("share").addEventListener("click", () => {
+            const url = `${window.location.origin}/mobile.html?country=${encodeURIComponent(document.getElementById("country-name").textContent || "")}`;
+            if (navigator.share) {
+                navigator.share({ url, title: "Global Beer Index" });
+            } else {
+                navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
+            }
+        });
+
+        // Закрытие модального окна при клике вне контента
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                modal.style.display = "none";
+                if (selectedLayer) {
+                    selectedLayer.setStyle({ weight: 1, color: '#666', opacity: 1 });
+                    selectedLayer = null;
+                }
+                document.body.style.backgroundImage = "none";
+                map.setView([20, 0], 2);
+            }
+        });
+    </script>
+</body>
+</html>
