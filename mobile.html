@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Beer Index (Mobile)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #252525;
+            color: #fff;
+            overflow-x: hidden;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease-in-out;
+            position: relative;
+            min-height: 100vh;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+            z-index: 1;
+        }
+        h1 {
+            text-align: center;
+            font-size: 30px;
+            font-weight: 800;
+            color: #ff6200;
+            margin: 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 2;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        #countries, #details {
+            background-color: rgba(48, 48, 48, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        #countries h2, #details h2 {
+            color: #ff6200;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        #countries ul {
+            list-style: none;
+            padding: 0;
+        }
+        #countries li {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        #countries a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        #countries a:hover {
+            color: #ff6200;
+        }
+        #details ul {
+            list-style: decimal;
+            padding-left: 20px;
+        }
+        #details li {
+            margin: 8px 0;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        #details .bar-name {
+            flex: 1;
+            word-wrap: break-word;
+            max-width: 65%;
+        }
+        #details a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        #details a:hover {
+            color: #ff6200;
+        }
+        #details .rating {
+            color: #ff6200;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+        #country-info {
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        #country-info p {
+            margin: 6px 0;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            background-color: #353535;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+        p.footer {
+            max-width: 800px;
+            margin: 15px auto;
+            color: #b0b0b0;
+            text-align: center;
+            font-size: 12px;
+            position: relative;
+            z-index: 2;
+        }
+        #search {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        #search::placeholder {
+            color: #b0b0b0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Global Beer Index</h1>
+    <div class="container">
+        <div id="countries">
+            <input type="text" id="search" placeholder="Search countries...">
+            <h2>Top 10 Countries</h2>
+            <ul id="top-countries"></ul>
+            <h2>Top 10 Beers</h2>
+            <ul id="top-beers"></ul>
+        </div>
+        <div id="map"></div>
+        <div id="details">
+            <h2><span id="country-name">Select a country</span></h2>
+            <div id="country-info"></div>
+            <h2>Top 10 Bars</h2>
+            <ul id="bars"></ul>
+        </div>
+    </div>
+    <p class="footer">Discover the ultimate beer destinations worldwide with our sleek, interactive index.</p>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="beerData.js"></script>
+    <script src="topBeers.js"></script>
+    <script>
+        if (window.innerWidth > 768) {
+            window.location.href = "index.html";
+        }
+
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let allCountries = Object.entries(beerData).sort((a, b) => b[1].rating - a[1].rating);
+        let topCountries = allCountries.slice(0, 10);
+        const topList = document.getElementById("top-countries");
+
+        function renderCountries(countries) {
+            topList.innerHTML = "";
+            countries.forEach(([country, data], index) => {
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.textContent = `${country}: ${data.rating}`;
+                a.href = "#";
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    showCountryInfo(country, data);
+                    changeBackground(country);
+                };
+                li.appendChild(a);
+                topList.appendChild(li);
+            });
+        }
+
+        renderCountries(topCountries);
+
+        const searchInput = document.getElementById("search");
+        searchInput.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filteredCountries = allCountries.filter(([country]) => country.toLowerCase().includes(query)).slice(0, 10);
+            renderCountries(filteredCountries.length > 0 ? filteredCountries : topCountries);
+        });
+
+        const topBeersList = document.getElementById("top-beers");
+        topBeers.forEach(beer => {
+            const li = document.createElement("li");
+            li.textContent = beer;
+            topBeersList.appendChild(li);
+        });
+
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(response => response.json())
+            .then(geojson => {
+                L.geoJSON(geojson, {
+                    style: function(feature) {
+                        const country = feature.properties.name;
+                        const data = beerData[country];
+                        return {
+                            fillColor: data ? getColor(data.rating) : '#404040',
+                            weight: 1,
+                            opacity: 1,
+                            color: '#666',
+                            fillOpacity: 0.7
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const country = feature.properties.name;
+                        const data = beerData[country];
+                        if (data) {
+                            layer.on('click', () => {
+                                showCountryInfo(country, data);
+                                changeBackground(country);
+                            });
+                        }
+                    }
+                }).addTo(map);
+            });
+
+        function getColor(rating) {
+            return rating > 50 ? '#00cc00' :
+                   rating > 30 ? '#ff6200' :
+                   '#ff3333';
+        }
+
+        function showCountryInfo(country, data) {
+            const countryName = document.getElementById("country-name");
+            const detailsDiv = document.getElementById("country-info");
+            const barUl = document.getElementById("bars");
+
+            countryName.textContent = country;
+            detailsDiv.innerHTML = `
+                <p><strong>Rating:</strong> ${data.rating}</p>
+                <p><strong>Sorts:</strong> ${data.sorts}</p>
+                <p><strong>Price:</strong> $${data.price}</p>
+                <p><strong>Most Popular:</strong> ${data.popular}</p>
+                <p><strong>Best Local:</strong> ${data.best}</p>
+            `;
+            barUl.innerHTML = "";
+            if (data.bars && data.bars.length > 0) {
+                data.bars.forEach(bar => {
+                    const li = document.createElement("li");
+                    const nameSpan = document.createElement("span");
+                    nameSpan.textContent = bar.name;
+                    nameSpan.className = "bar-name";
+                    const a = document.createElement("a");
+                    a.textContent = bar.name;
+                    a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.name)}`;
+                    a.target = "_blank";
+                    li.appendChild(a);
+                    const ratingSpan = document.createElement("span");
+                    ratingSpan.className = "rating";
+                    const stars = getStars(bar.rating);
+                    ratingSpan.innerHTML = `${stars} ${bar.rating || "N/A"}`;
+                    li.appendChild(ratingSpan);
+                    barUl.appendChild(li);
+                });
+            } else {
+                barUl.innerHTML = "<li>No bars listed yet!</li>";
+            }
+        }
+
+        function getStars(rating) {
+            if (!rating) return "";
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5 ? "☆" : "";
+            const emptyStars = 5 - Math.ceil(rating);
+            return "★".repeat(fullStars) + halfStar + "☆".repeat(emptyStars);
+        }
+
+        function changeBackground(country) {
+            const landmarks = {
+                "Vietnam": "https://images.unsplash.com/photo-1545096922-6c8736f9a75e?q=80&w=1600&auto=format&fit=crop",
+                "China": "https://images.unsplash.com/photo-1509043759401-6a05f8c7457e?q=80&w=1600&auto=format&fit=crop",
+                "Czech Republic": "https://images.unsplash.com/photo-1565284055438-3a6fb81c5a50?q=80&w=1600&auto=format&fit=crop",
+                "Germany": "https://images.unsplash.com/photo-1538331642459-627f3d4dc4cf?q=80&w=1600&auto=format&fit=crop",
+                "Kazakhstan": "https://images.unsplash.com/photo-1623944829159-d5e17f7fd7fa?q=80&w=1600&auto=format&fit=crop",
+                "Poland": "https://images.unsplash.com/photo-1609937672019-87c6c2ca9f81?q=80&w=1600&auto=format&fit=crop",
+                "Slovakia": "https://images.unsplash.com/photo-1601472560860-48c2c43e749f?q=80&w=1600&auto=format&fit=crop",
+                "Ukraine": "https://images.unsplash.com/photo-1590879553360-fe35c87f8d37?q=80&w=1600&auto=format&fit=crop",
+                "Romania": "https://images.unsplash.com/photo-1580130775558-c467d8aba9d2?q=80&w=1600&auto=format&fit=crop",
+                "Mexico": "https://images.unsplash.com/photo-1504215686142-6026e0484910?q=80&w=1600&auto=format&fit=crop",
+                "Lithuania": "https://images.unsplash.com/photo-1566296821488-aaf55e771f4c?q=80&w=1600&auto=format&fit=crop",
+                "Croatia": "https://images.unsplash.com/photo-1515859006706-ef2062981599?q=80&w=1600&auto=format&fit=crop",
+                "Russia": "https://images.unsplash.com/photo-1547448526-5e9b15f2e2df?q=80&w=1600&auto=format&fit=crop"
+                // Добавь остальные страны из полного списка, если нужно
+            };
+            const imageUrl = landmarks[country] || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1600&auto=format&fit=crop";
+            document.body.style.backgroundImage = `url(${imageUrl})`;
+        }
+    </script>
+</body>
+</html>
