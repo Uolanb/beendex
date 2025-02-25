@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beendex (Mobile)</title>
+    <title>Global Beer Index (Mobile)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -27,7 +28,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1;
         }
         h1 {
@@ -50,36 +51,20 @@
             position: relative;
             z-index: 2;
         }
-        #countries, #details {
+        #details {
             background-color: rgba(48, 48, 48, 0.9);
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
-        #countries h2, #details h2 {
+        #details h2 {
             color: #ff6200;
             font-size: 18px;
             font-weight: 600;
             margin-top: 0;
             margin-bottom: 10px;
             text-transform: uppercase;
-        }
-        #countries ul {
-            list-style: none;
-            padding: 0;
-        }
-        #countries li {
-            margin: 8px 0;
-            font-size: 14px;
-        }
-        #countries a {
-            color: #fff;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        #countries a:hover {
-            color: #ff6200;
         }
         #details ul {
             list-style: decimal;
@@ -119,6 +104,18 @@
         #country-info p {
             margin: 6px 0;
         }
+        #country-info p i {
+            margin-right: 5px;
+            color: #ff6200;
+        }
+        #country-info ul {
+            padding-left: 20px;
+            list-style: disc;
+        }
+        #country-info ul li {
+            margin: 5px 0;
+            font-size: 11px;
+        }
         #map {
             height: 400px;
             width: 100%;
@@ -136,34 +133,31 @@
             position: relative;
             z-index: 2;
         }
-        #search {
-            width: 100%;
+        #reset, #share {
+            width: 48%;
             padding: 8px;
-            margin-bottom: 10px;
+            margin: 5px 1%;
+            background-color: #ff6200;
+            color: #fff;
             border: none;
             border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
+            cursor: pointer;
             font-size: 14px;
+            transition: background-color 0.3s;
         }
-        #search::placeholder {
-            color: #b0b0b0;
+        #reset:hover, #share:hover {
+            background-color: #e05500;
         }
     </style>
 </head>
 <body>
-    <h1>Beendex</h1>
+    <h1>Global Beer Index</h1>
     <div class="container">
-        <div id="countries">
-            <input type="text" id="search" placeholder="Search countries...">
-            <h2>Top 10 Countries</h2>
-            <ul id="top-countries"></ul>
-            <h2>Top 10 Beers</h2>
-            <ul id="top-beers"></ul>
-        </div>
         <div id="map"></div>
         <div id="details">
             <h2><span id="country-name">Select a country</span></h2>
+            <button id="share">Share</button>
+            <button id="reset">Reset</button>
             <div id="country-info"></div>
             <h2>Top 10 Bars</h2>
             <ul id="bars"></ul>
@@ -173,7 +167,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="beerData.js"></script>
-    <script src="topBeers.js"></script>
     <script>
         if (window.innerWidth > 768) {
             window.location.href = "index.html";
@@ -185,42 +178,8 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        let allCountries = Object.entries(beerData).sort((a, b) => b[1].rating - a[1].rating);
-        let topCountries = allCountries.slice(0, 10);
-        const topList = document.getElementById("top-countries");
-
-        function renderCountries(countries) {
-            topList.innerHTML = "";
-            countries.forEach(([country, data], index) => {
-                const li = document.createElement("li");
-                const a = document.createElement("a");
-                a.textContent = `${country}: ${data.rating}`;
-                a.href = "#";
-                a.onclick = (e) => {
-                    e.preventDefault();
-                    showCountryInfo(country, data);
-                    changeBackground(country);
-                };
-                li.appendChild(a);
-                topList.appendChild(li);
-            });
-        }
-
-        renderCountries(topCountries);
-
-        const searchInput = document.getElementById("search");
-        searchInput.addEventListener("input", (e) => {
-            const query = e.target.value.toLowerCase();
-            const filteredCountries = allCountries.filter(([country]) => country.toLowerCase().includes(query)).slice(0, 10);
-            renderCountries(filteredCountries.length > 0 ? filteredCountries : topCountries);
-        });
-
-        const topBeersList = document.getElementById("top-beers");
-        topBeers.forEach(beer => {
-            const li = document.createElement("li");
-            li.textContent = beer;
-            topBeersList.appendChild(li);
-        });
+        let allCountries = Object.entries(beerData);
+        let selectedLayer = null;
 
         fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
             .then(response => response.json())
@@ -244,6 +203,7 @@
                             layer.on('click', () => {
                                 showCountryInfo(country, data);
                                 changeBackground(country);
+                                highlightCountry(country, layer);
                             });
                         }
                     }
@@ -251,46 +211,72 @@
             });
 
         function getColor(rating) {
-            return rating > 50 ? '#00cc00' :
-                   rating > 30 ? '#ff6200' :
-                   '#ff3333';
+            if (rating >= 75) return '#00cc00';      // 75–100: яркий зелёный
+            if (rating >= 60) return '#66ff66';      // 60–75: светло-зелёный
+            if (rating >= 50) return '#ff6200';      // 50–60: оранжевый
+            if (rating >= 30) return '#ff3333';      // 30–50: красный
+            return '#800000';                        // 0–30: тёмно-красный
+        }
+
+        function highlightCountry(country, layer) {
+            if (selectedLayer) {
+                selectedLayer.setStyle({
+                    weight: 1,
+                    color: '#666',
+                    opacity: 1
+                });
+            }
+            if (layer) {
+                layer.setStyle({
+                    weight: 3,
+                    color: '#ff6200',
+                    opacity: 1
+                });
+                selectedLayer = layer;
+            }
         }
 
         function showCountryInfo(country, data) {
+            const isRu = country === "Russia" || country === "Kazakhstan";
             const countryName = document.getElementById("country-name");
             const detailsDiv = document.getElementById("country-info");
             const barUl = document.getElementById("bars");
-
             countryName.textContent = country;
             detailsDiv.innerHTML = `
-                <p><strong>Rating:</strong> ${data.rating}</p>
-                <p><strong>Sorts:</strong> ${data.sorts}</p>
-                <p><strong>Price:</strong> $${data.price}</p>
-                <p><strong>Most Popular:</strong> ${data.popular}</p>
-                <p><strong>Best Local:</strong> ${data.best}</p>
+                <p><i class="fas fa-star"></i><strong>${isRu ? "Рейтинг" : "Rating"}:</strong> ${data.rating.toFixed(2)}</p>
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Крафтовые сорта" : "Craft Sorts"}:</strong> ${data.craftSorts}</p>
+                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Цена" : "Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-globe"></i><strong>${isRu ? "Туристический рейтинг" : "Tourism Score"}:</strong> ${data.tourismScore}</p>
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Самое популярное" : "Most Popular"}:</strong> ${isRu ? data.popularRu : data.popular}</p>
+                <p><i class="fas fa-trophy"></i><strong>${isRu ? "Лучшее местное" : "Best Local"}:</strong> ${isRu ? data.bestRu : data.best}</p>
+                <p><i class="fas fa-book"></i><strong>${isRu ? "Культура" : "Culture"}:</strong> ${isRu ? data.descriptionRu : data.description}</p>
+                <p><i class="fas fa-utensils"></i><strong>${isRu ? "Еда к пиву" : "Food Pairing"}:</strong> ${isRu ? data.foodPairingRu : data.foodPairing}</p>
+                <p><i class="fas fa-beer"></i><strong>${isRu ? "Топ-5 брендов" : "Top 5 Brands"}:</strong></p>
+                <ul>${(isRu ? data.topBrandsRu : data.topBrands).map(brand => `<li>${brand}</li>`).join('')}</ul>
             `;
+            renderBars(data.bars);
+        }
+
+        function renderBars(bars) {
+            const barUl = document.getElementById("bars");
             barUl.innerHTML = "";
-            if (data.bars && data.bars.length > 0) {
-                data.bars.forEach(bar => {
-                    const li = document.createElement("li");
-                    const nameSpan = document.createElement("span");
-                    nameSpan.textContent = bar.name;
-                    nameSpan.className = "bar-name";
-                    const a = document.createElement("a");
-                    a.textContent = bar.name;
-                    a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.name)}`;
-                    a.target = "_blank";
-                    li.appendChild(a);
-                    const ratingSpan = document.createElement("span");
-                    ratingSpan.className = "rating";
-                    const stars = getStars(bar.rating);
-                    ratingSpan.innerHTML = `${stars} ${bar.rating || "N/A"}`;
-                    li.appendChild(ratingSpan);
-                    barUl.appendChild(li);
-                });
-            } else {
-                barUl.innerHTML = "<li>No bars listed yet!</li>";
-            }
+            bars.slice(0, 10).forEach(bar => {
+                const li = document.createElement("li");
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = bar.name;
+                nameSpan.className = "bar-name";
+                const a = document.createElement("a");
+                a.textContent = bar.name;
+                a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.name)}`;
+                a.target = "_blank";
+                li.appendChild(a);
+                const ratingSpan = document.createElement("span");
+                ratingSpan.className = "rating";
+                const stars = getStars(bar.rating);
+                ratingSpan.innerHTML = `${stars} ${bar.rating || "N/A"}`;
+                li.appendChild(ratingSpan);
+                barUl.appendChild(li);
+            });
         }
 
         function getStars(rating) {
@@ -304,23 +290,40 @@
         function changeBackground(country) {
             const landmarks = {
                 "Vietnam": "https://images.unsplash.com/photo-1545096922-6c8736f9a75e?q=80&w=1600&auto=format&fit=crop",
-                "China": "https://images.unsplash.com/photo-1509043759401-6a05f8c7457e?q=80&w=1600&auto=format&fit=crop",
+                "Russia": "https://images.unsplash.com/photo-1547448526-5e9b15f2e2df?q=80&w=1600&auto=format&fit=crop",
                 "Czech Republic": "https://images.unsplash.com/photo-1565284055438-3a6fb81c5a50?q=80&w=1600&auto=format&fit=crop",
                 "Germany": "https://images.unsplash.com/photo-1538331642459-627f3d4dc4cf?q=80&w=1600&auto=format&fit=crop",
-                "Kazakhstan": "https://images.unsplash.com/photo-1623944829159-d5e17f7fd7fa?q=80&w=1600&auto=format&fit=crop",
-                "Poland": "https://images.unsplash.com/photo-1609937672019-87c6c2ca9f81?q=80&w=1600&auto=format&fit=crop",
-                "Slovakia": "https://images.unsplash.com/photo-1601472560860-48c2c43e749f?q=80&w=1600&auto=format&fit=crop",
-                "Ukraine": "https://images.unsplash.com/photo-1590879553360-fe35c87f8d37?q=80&w=1600&auto=format&fit=crop",
-                "Romania": "https://images.unsplash.com/photo-1580130775558-c467d8aba9d2?q=80&w=1600&auto=format&fit=crop",
+                "Australia": "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=1600&auto=format&fit=crop",
+                "Brazil": "https://images.unsplash.com/photo-1504276048855-f3d3f2e36d2e?q=80&w=1600&auto=format&fit=crop",
+                "Japan": "https://images.unsplash.com/photo-1493976040374-85c8e12f2c0e?q=80&w=1600&auto=format&fit=crop",
                 "Mexico": "https://images.unsplash.com/photo-1504215686142-6026e0484910?q=80&w=1600&auto=format&fit=crop",
-                "Lithuania": "https://images.unsplash.com/photo-1566296821488-aaf55e771f4c?q=80&w=1600&auto=format&fit=crop",
-                "Croatia": "https://images.unsplash.com/photo-1515859006706-ef2062981599?q=80&w=1600&auto=format&fit=crop",
-                "Russia": "https://images.unsplash.com/photo-1547448526-5e9b15f2e2df?q=80&w=1600&auto=format&fit=crop"
-                // Добавь остальные страны из полного списка, если нужно
+                "South Africa": "https://images.unsplash.com/photo-1547471080-7cc2cfc260e0?q=80&w=1600&auto=format&fit=crop",
+                "United States": "https://images.unsplash.com/photo-1501594907352-967beb6f20e2?q=80&w=1600&auto=format&fit=crop"
             };
             const imageUrl = landmarks[country] || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1600&auto=format&fit=crop";
             document.body.style.backgroundImage = `url(${imageUrl})`;
         }
+
+        document.getElementById("reset").addEventListener("click", () => {
+            document.getElementById("country-name").textContent = "Select a country";
+            document.getElementById("country-info").innerHTML = "";
+            document.getElementById("bars").innerHTML = "";
+            document.body.style.backgroundImage = "none";
+            if (selectedLayer) {
+                selectedLayer.setStyle({ weight: 1, color: '#666', opacity: 1 });
+                selectedLayer = null;
+            }
+            map.setView([20, 0], 2);
+        });
+
+        document.getElementById("share").addEventListener("click", () => {
+            const url = `${window.location.origin}/mobile.html?country=${encodeURIComponent(currentCountry?.country || "")}`;
+            if (navigator.share) {
+                navigator.share({ url, title: "Global Beer Index" });
+            } else {
+                navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
+            }
+        });
     </script>
 </body>
 </html>
