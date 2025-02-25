@@ -5,77 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Beer Index</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
-        h1 { color: #333; text-align: center; }
-        .container { display: flex; max-width: 1400px; margin: 0 auto; }
-        #left-sidebar { width: 250px; padding-right: 20px; }
-        #right-sidebar { width: 300px; padding-left: 20px; }
-        #left-sidebar h2, #right-sidebar h2 { color: #333; font-size: 18px; margin-top: 20px; }
-        #left-sidebar ul, #right-sidebar ul { list-style: none; padding: 0; }
-        #left-sidebar li { margin: 10px 0; font-size: 16px; }
-        #left-sidebar a { color: #007bff; text-decoration: none; cursor: pointer; }
-        #left-sidebar a:hover { text-decoration: underline; }
-        #right-sidebar ul { list-style: decimal; padding-left: 20px; }
-        #right-sidebar li { margin: 8px 0; font-size: 14px; }
-        #right-sidebar a { color: #007bff; text-decoration: none; }
-        #right-sidebar a:hover { text-decoration: underline; }
-        #map { height: 600px; flex-grow: 1; }
-        p { max-width: 800px; margin: 10px auto; color: #666; text-align: center; }
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #252525;
+            color: #fff;
+            overflow-x: hidden;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease-in-out;
+            position: relative;
+            min-height: 100vh;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+            z-index: 1;
+        }
+        h1 {
+            text-align: center;
+            font-size: 50px;
+            font-weight: 800;
+            color: #ff6200;
+            margin: 40px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+        }
+        .container {
+            display: flex;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 30px;
+            position: relative;
+            z-index: 2;
+        }
+        #left-sidebar, #right-sidebar {
+            background-color: rgba(48, 48, 48, 0.9);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        #left-sidebar { width: 300px; }
+        #right-sidebar { width: 350px; }
+        #left-sidebar h2, #right-sidebar h2 {
+            color: #ff6200;
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        #left-sidebar ul, #right-sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        #left-sidebar li {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+        #left-sidebar a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s, padding-left 0.3s;
+        }
+        #left-sidebar a:hover {
+            color: #ff6200;
+            padding-left: 5px;
+        }
+        #right-sidebar ul {
+            list-style: decimal;
+            padding-left: 25px;
+        }
+        #right-sidebar li {
+            margin: 12px 0;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        #right-sidebar .bar-name {
+            flex: 1;
+            word-wrap: break-word;
+            max-width: 250px;
+        }
+        #right-sidebar a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        #right-sidebar a:hover {
+            color: #ff6200;
+        }
+        #right-sidebar .rating {
+            color: #ff6200;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+        #country-details {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        #country-details p {
+            margin: 8px 0;
+        }
+        #map {
+            height: 700px;
+            flex-grow: 1;
+            border-radius: 8px;
+            background-color: #353535;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        p.footer {
+            max-width: 800px;
+            margin: 30px auto;
+            color: #b0b0b0;
+            text-align: center;
+            font-size: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        #search {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+        }
+        #search::placeholder {
+            color: #b0b0b0;
+        }
     </style>
 </head>
 <body>
     <h1>Global Beer Index</h1>
     <div class="container">
         <div id="left-sidebar">
+            <input type="text" id="search" placeholder="Search countries...">
             <h2>Top 10 Countries</h2>
             <ul id="top-countries"></ul>
-            <h2>Top 10 Beers by Popularity</h2>
-            <ul id="top-beers">
-                <li>Bud Light (USA)</li>
-                <li>Snow Beer (China)</li>
-                <li>Budweiser (USA)</li>
-                <li>Heineken (Netherlands)</li>
-                <li>Corona (Mexico)</li>
-                <li>Coors Light (USA)</li>
-                <li>Miller Lite (USA)</li>
-                <li>Tsingtao (China)</li>
-                <li>Asahi Super Dry (Japan)</li>
-                <li>Pilsner Urquell (Czech Republic)</li>
-            </ul>
+            <h2>Top 10 Beers</h2>
+            <ul id="top-beers"></ul>
         </div>
         <div id="map"></div>
         <div id="right-sidebar">
-            <h2>Top 10 Bars in <span id="country-name">Select a country</span></h2>
+            <h2><span id="country-name">Select a country</span></h2>
+            <div id="country-details"></div>
+            <h2>Top 10 Bars</h2>
             <ul id="bars"></ul>
         </div>
     </div>
-    <p>Discover where to find the best and most affordable beer around the world! Our index is based on 70% price affordability and 30% variety of beers.</p>
+    <p class="footer">Discover the ultimate beer destinations worldwide with our sleek, interactive index.</p>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="beerData.js"></script>
+    <script src="topBeers.js"></script>
     <script>
+        if (window.innerWidth <= 768) {
+            window.location.href = "mobile.html";
+        }
+
         const map = L.map('map').setView([20, 0], 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        const topCountries = Object.entries(beerData)
-            .sort((a, b) => b[1].rating - a[1].rating)
-            .slice(0, 10);
+        let allCountries = Object.entries(beerData).sort((a, b) => b[1].rating - a[1].rating);
+        let topCountries = allCountries.slice(0, 10);
         const topList = document.getElementById("top-countries");
-        topCountries.forEach(([country, data]) => {
+
+        function renderCountries(countries) {
+            topList.innerHTML = "";
+            countries.forEach(([country, data], index) => {
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.textContent = `${country}: ${data.rating}`;
+                a.href = "#";
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    showCountryInfo(country, data);
+                    changeBackground(country);
+                };
+                li.appendChild(a);
+                topList.appendChild(li);
+            });
+        }
+
+        renderCountries(topCountries);
+
+        const searchInput = document.getElementById("search");
+        searchInput.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filteredCountries = allCountries.filter(([country]) => country.toLowerCase().includes(query)).slice(0, 10);
+            renderCountries(filteredCountries.length > 0 ? filteredCountries : topCountries);
+        });
+
+        const topBeersList = document.getElementById("top-beers");
+        topBeers.forEach(beer => {
             const li = document.createElement("li");
-            const a = document.createElement("a");
-            a.textContent = `${country}: ${data.rating}`;
-            a.href = "#";
-            a.onclick = (e) => {
-                e.preventDefault();
-                showBars(country, data.bars);
-            };
-            li.appendChild(a);
-            topList.appendChild(li);
+            li.textContent = beer;
+            topBeersList.appendChild(li);
         });
 
         fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
@@ -86,10 +231,10 @@
                         const country = feature.properties.name;
                         const data = beerData[country];
                         return {
-                            fillColor: data ? getColor(data.rating) : '#cccccc',
+                            fillColor: data ? getColor(data.rating) : '#404040',
                             weight: 1,
                             opacity: 1,
-                            color: 'white',
+                            color: '#666',
                             fillOpacity: 0.7
                         };
                     },
@@ -97,45 +242,85 @@
                         const country = feature.properties.name;
                         const data = beerData[country];
                         if (data) {
-                            layer.bindPopup(`
-                                <b>${country}</b><br>
-                                Rating: ${data.rating}<br>
-                                Sorts: ${data.sorts}<br>
-                                Price: $${data.price}<br>
-                                Most Popular: ${data.popular}<br>
-                                Best Local: ${data.best}
-                            `);
-                            layer.on('click', () => showBars(country, data.bars));
+                            layer.on('click', () => {
+                                showCountryInfo(country, data);
+                                changeBackground(country);
+                            });
                         }
                     }
                 }).addTo(map);
             });
 
         function getColor(rating) {
-            return rating > 50 ? '#00ff00' :
-                   rating > 30 ? '#ffff00' :
-                   '#ff0000';
+            return rating > 50 ? '#00cc00' :
+                   rating > 30 ? '#ff6200' :
+                   '#ff3333';
         }
 
-        function showBars(country, bars) {
+        function showCountryInfo(country, data) {
             const countryName = document.getElementById("country-name");
+            const detailsDiv = document.getElementById("country-details");
             const barUl = document.getElementById("bars");
 
             countryName.textContent = country;
+            detailsDiv.innerHTML = `
+                <p><strong>Rating:</strong> ${data.rating}</p>
+                <p><strong>Sorts:</strong> ${data.sorts}</p>
+                <p><strong>Price:</strong> $${data.price}</p>
+                <p><strong>Most Popular:</strong> ${data.popular}</p>
+                <p><strong>Best Local:</strong> ${data.best}</p>
+            `;
             barUl.innerHTML = "";
-            if (bars && bars.length > 0) {
-                bars.forEach(bar => {
+            if (data.bars && data.bars.length > 0) {
+                data.bars.forEach(bar => {
                     const li = document.createElement("li");
+                    const nameSpan = document.createElement("span");
+                    nameSpan.textContent = bar.name;
+                    nameSpan.className = "bar-name";
                     const a = document.createElement("a");
-                    a.textContent = bar;
-                    a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar)}`;
+                    a.textContent = bar.name;
+                    a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.name)}`;
                     a.target = "_blank";
                     li.appendChild(a);
+                    const ratingSpan = document.createElement("span");
+                    ratingSpan.className = "rating";
+                    const stars = getStars(bar.rating);
+                    ratingSpan.innerHTML = `${stars} ${bar.rating || "N/A"}`;
+                    li.appendChild(ratingSpan);
                     barUl.appendChild(li);
                 });
             } else {
                 barUl.innerHTML = "<li>No bars listed yet!</li>";
             }
+        }
+
+        function getStars(rating) {
+            if (!rating) return "";
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5 ? "☆" : "";
+            const emptyStars = 5 - Math.ceil(rating);
+            return "★".repeat(fullStars) + halfStar + "☆".repeat(emptyStars);
+        }
+
+        function changeBackground(country) {
+            const landmarks = {
+                "Vietnam": "https://images.unsplash.com/photo-1545096922-6c8736f9a75e?q=80&w=1600&auto=format&fit=crop",
+                "China": "https://images.unsplash.com/photo-1509043759401-6a05f8c7457e?q=80&w=1600&auto=format&fit=crop",
+                "Czech Republic": "https://images.unsplash.com/photo-1565284055438-3a6fb81c5a50?q=80&w=1600&auto=format&fit=crop",
+                "Germany": "https://images.unsplash.com/photo-1538331642459-627f3d4dc4cf?q=80&w=1600&auto=format&fit=crop",
+                "Kazakhstan": "https://images.unsplash.com/photo-1623944829159-d5e17f7fd7fa?q=80&w=1600&auto=format&fit=crop",
+                "Poland": "https://images.unsplash.com/photo-1609937672019-87c6c2ca9f81?q=80&w=1600&auto=format&fit=crop",
+                "Slovakia": "https://images.unsplash.com/photo-1601472560860-48c2c43e749f?q=80&w=1600&auto=format&fit=crop",
+                "Ukraine": "https://images.unsplash.com/photo-1590879553360-fe35c87f8d37?q=80&w=1600&auto=format&fit=crop",
+                "Romania": "https://images.unsplash.com/photo-1580130775558-c467d8aba9d2?q=80&w=1600&auto=format&fit=crop",
+                "Mexico": "https://images.unsplash.com/photo-1504215686142-6026e0484910?q=80&w=1600&auto=format&fit=crop",
+                "Lithuania": "https://images.unsplash.com/photo-1566296821488-aaf55e771f4c?q=80&w=1600&auto=format&fit=crop",
+                "Croatia": "https://images.unsplash.com/photo-1515859006706-ef2062981599?q=80&w=1600&auto=format&fit=crop",
+                "Russia": "https://images.unsplash.com/photo-1547448526-5e9b15f2e2df?q=80&w=1600&auto=format&fit=crop"
+                // Добавь остальные страны из полного списка, если нужно
+            };
+            const imageUrl = landmarks[country] || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1600&auto=format&fit=crop";
+            document.body.style.backgroundImage = `url(${imageUrl})`;
         }
     </script>
 </body>
