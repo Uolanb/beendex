@@ -237,7 +237,7 @@
             <input type="text" id="search" placeholder="Search countries...">
             <select id="sort">
                 <option value="rating">Sort by Rating</option>
-                <option value="price">Sort by Price</option>
+                <option value="price">Sort by Min Price</option>
                 <option value="craftSorts">Sort by Craft Sorts</option>
             </select>
             <button id="reset">Reset</button>
@@ -257,7 +257,7 @@
             <h2><span id="country-name">Select a country</span></h2>
             <button id="share">Share</button>
             <div id="country-details"></div>
-            <h2>Top Bars</h2>
+            <h2>Top 10 Bars</h2>
             <ul id="bars"></ul>
         </div>
     </div>
@@ -384,11 +384,11 @@
             });
 
         function getColor(rating) {
-            if (rating >= 75) return '#00cc00';      // 75–100: яркий зелёный
-            if (rating >= 60) return '#66ff66';      // 60–75: светло-зелёный
-            if (rating >= 50) return '#ff6200';      // 50–60: оранжевый
-            if (rating >= 30) return '#ff3333';      // 30–50: красный
-            return '#800000';                        // 0–30: тёмно-красный
+            return rating >= 75 ? '#00cc00' :
+                   rating >= 60 ? '#66ff66' :
+                   rating >= 50 ? '#ff6200' :
+                   rating >= 30 ? '#ff3333' :
+                   '#800000';
         }
 
         function highlightCountry(country, layer) {
@@ -418,12 +418,13 @@
             detailsDiv.innerHTML = `
                 <p><i class="fas fa-star"></i><strong>${isRu ? "Рейтинг" : "Rating"}:</strong> ${data.rating.toFixed(2)}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Крафтовые сорта" : "Craft Sorts"}:</strong> ${data.craftSorts}</p>
-                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Цена" : "Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Минимальная цена" : "Min Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-glass-cheers"></i><strong>${isRu ? "Средняя цена в баре" : "Avg Bar Price"}:</strong> $${data.barPrice}</p>
+                <p><i class="fas fa-shopping-cart"></i><strong>${isRu ? "Средняя цена в магазине" : "Avg Shop Price"}:</strong> $${data.shopPrice}</p>
                 <p><i class="fas fa-globe"></i><strong>${isRu ? "Туристический рейтинг" : "Tourism Score"}:</strong> ${data.tourismScore}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Самое популярное" : "Most Popular"}:</strong> ${isRu ? data.popularRu : data.popular}</p>
                 <p><i class="fas fa-trophy"></i><strong>${isRu ? "Лучшее местное" : "Best Local"}:</strong> ${isRu ? data.bestRu : data.best}</p>
                 <p><i class="fas fa-book"></i><strong>${isRu ? "Культура" : "Culture"}:</strong> ${isRu ? data.descriptionRu : data.description}</p>
-                <p><i class="fas fa-utensils"></i><strong>${isRu ? "Еда к пиву" : "Food Pairing"}:</strong> ${isRu ? data.foodPairingRu : data.foodPairing}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Топ-5 брендов" : "Top 5 Brands"}:</strong></p>
                 <ul>${(isRu ? data.topBrandsRu : data.topBrands).map(brand => `<li>${brand}</li>`).join('')}</ul>
             `;

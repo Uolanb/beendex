@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Beer Index (Mobile)</title>
+    <title>Beendex</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -68,7 +68,6 @@
             position: relative;
             z-index: 2;
         }
-        /* Стили для модального окна */
         #modal {
             display: none;
             position: fixed;
@@ -158,7 +157,7 @@
     </style>
 </head>
 <body>
-    <h1>Global Beer Index</h1>
+    <h1>Beendex</h1>
     <div class="container">
         <div id="map"></div>
     </div>
@@ -225,11 +224,11 @@
             });
 
         function getColor(rating) {
-            if (rating >= 75) return '#00cc00';      // 75–100: яркий зелёный
-            if (rating >= 60) return '#66ff66';      // 60–75: светло-зелёный
-            if (rating >= 50) return '#ff6200';      // 50–60: оранжевый
-            if (rating >= 30) return '#ff3333';      // 30–50: красный
-            return '#800000';                        // 0–30: тёмно-красный
+            if (rating >= 75) return '#00cc00';
+            if (rating >= 60) return '#66ff66';
+            if (rating >= 50) return '#ff6200';
+            if (rating >= 30) return '#ff3333';
+            return '#800000';
         }
 
         function highlightCountry(country, layer) {
@@ -259,12 +258,13 @@
             detailsDiv.innerHTML = `
                 <p><i class="fas fa-star"></i><strong>${isRu ? "Рейтинг" : "Rating"}:</strong> ${data.rating.toFixed(2)}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Крафтовые сорта" : "Craft Sorts"}:</strong> ${data.craftSorts}</p>
-                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Цена" : "Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-dollar-sign"></i><strong>${isRu ? "Минимальная цена" : "Min Price"}:</strong> $${data.price}</p>
+                <p><i class="fas fa-glass-cheers"></i><strong>${isRu ? "Средняя цена в баре" : "Avg Bar Price"}:</strong> $${data.barPrice}</p>
+                <p><i class="fas fa-shopping-cart"></i><strong>${isRu ? "Средняя цена в магазине" : "Avg Shop Price"}:</strong> $${data.shopPrice}</p>
                 <p><i class="fas fa-globe"></i><strong>${isRu ? "Туристический рейтинг" : "Tourism Score"}:</strong> ${data.tourismScore}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Самое популярное" : "Most Popular"}:</strong> ${isRu ? data.popularRu : data.popular}</p>
                 <p><i class="fas fa-trophy"></i><strong>${isRu ? "Лучшее местное" : "Best Local"}:</strong> ${isRu ? data.bestRu : data.best}</p>
                 <p><i class="fas fa-book"></i><strong>${isRu ? "Культура" : "Culture"}:</strong> ${isRu ? data.descriptionRu : data.description}</p>
-                <p><i class="fas fa-utensils"></i><strong>${isRu ? "Еда к пиву" : "Food Pairing"}:</strong> ${isRu ? data.foodPairingRu : data.foodPairing}</p>
                 <p><i class="fas fa-beer"></i><strong>${isRu ? "Топ-5 брендов" : "Top 5 Brands"}:</strong></p>
                 <ul>${(isRu ? data.topBrandsRu : data.topBrands).map(brand => `<li>${brand}</li>`).join('')}</ul>
             `;
@@ -325,19 +325,17 @@
                 selectedLayer = null;
             }
             document.body.style.backgroundImage = "none";
-            // Убрано map.setView([20, 0], 2) — карта остаётся на месте
         });
 
         document.getElementById("share").addEventListener("click", () => {
             const url = `${window.location.origin}/mobile.html?country=${encodeURIComponent(document.getElementById("country-name").textContent || "")}`;
             if (navigator.share) {
-                navigator.share({ url, title: "Global Beer Index" });
+                navigator.share({ url, title: "Beendex" });
             } else {
                 navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
             }
         });
 
-        // Закрытие модального окна при клике вне контента
         modal.addEventListener("click", (e) => {
             if (e.target === modal) {
                 modal.style.display = "none";
@@ -346,7 +344,6 @@
                     selectedLayer = null;
                 }
                 document.body.style.backgroundImage = "none";
-                // Убрано map.setView([20, 0], 2) — карта остаётся на месте
             }
         });
     </script>
