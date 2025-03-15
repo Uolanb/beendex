@@ -3339,7 +3339,7 @@ const beerData = {
             { name: "BrewDog Camden", rating: 4.5 }
         ]
     },
-    "United States": {
+    "United States of America": {
         rating: 67.33,
         craftSorts: 90,
         price: 3.00,
